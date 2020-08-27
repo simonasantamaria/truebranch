@@ -141,6 +141,38 @@ Requirement already satisfied: pillow&gt;=4.1.1 in /Library/Frameworks/Python.fr
 
 <div class="inner_cell">
     <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> pip install faiss-cpu --no-cache
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Requirement already satisfied: faiss-cpu in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (1.6.3)
+Requirement already satisfied: numpy in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from faiss-cpu) (1.19.1)
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
 <span class="kn">import</span> <span class="nn">pytorch_metric_learning</span>
 <span class="kn">from</span> <span class="nn">pytorch_metric_learning</span> <span class="kn">import</span> <span class="n">losses</span><span class="p">,</span> <span class="n">miners</span><span class="p">,</span> <span class="n">samplers</span><span class="p">,</span> <span class="n">trainers</span><span class="p">,</span> <span class="n">testers</span>
