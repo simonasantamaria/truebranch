@@ -100,6 +100,47 @@ nb_path: "00_core.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> pip install pytorch-metric-learning<span class="o">==</span><span class="m">0</span>.9.87.dev4
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Requirement already satisfied: pytorch-metric-learning==0.9.87.dev4 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (0.9.87.dev4)
+Requirement already satisfied: numpy in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from pytorch-metric-learning==0.9.87.dev4) (1.19.1)
+Requirement already satisfied: scikit-learn in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from pytorch-metric-learning==0.9.87.dev4) (0.23.2)
+Requirement already satisfied: torch in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from pytorch-metric-learning==0.9.87.dev4) (1.6.0)
+Requirement already satisfied: torchvision in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from pytorch-metric-learning==0.9.87.dev4) (0.7.0)
+Requirement already satisfied: tqdm in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from pytorch-metric-learning==0.9.87.dev4) (4.48.2)
+Requirement already satisfied: joblib&gt;=0.11 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from scikit-learn-&gt;pytorch-metric-learning==0.9.87.dev4) (0.16.0)
+Requirement already satisfied: threadpoolctl&gt;=2.0.0 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from scikit-learn-&gt;pytorch-metric-learning==0.9.87.dev4) (2.1.0)
+Requirement already satisfied: scipy&gt;=0.19.1 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from scikit-learn-&gt;pytorch-metric-learning==0.9.87.dev4) (1.5.2)
+Requirement already satisfied: future in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from torch-&gt;pytorch-metric-learning==0.9.87.dev4) (0.18.2)
+Requirement already satisfied: pillow&gt;=4.1.1 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from torchvision-&gt;pytorch-metric-learning==0.9.87.dev4) (7.2.0)
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
 <span class="kn">import</span> <span class="nn">pytorch_metric_learning</span>
 <span class="kn">from</span> <span class="nn">pytorch_metric_learning</span> <span class="kn">import</span> <span class="n">losses</span><span class="p">,</span> <span class="n">miners</span><span class="p">,</span> <span class="n">samplers</span><span class="p">,</span> <span class="n">trainers</span><span class="p">,</span> <span class="n">testers</span>
@@ -187,6 +228,12 @@ nb_path: "00_core.ipynb"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Simple-model-def">Simple model def<a class="anchor-link" href="#Simple-model-def"> </a></h2>
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -226,10 +273,740 @@ nb_path: "00_core.ipynb"
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="truebranch-functions-2">truebranch functions 2<a class="anchor-link" href="#truebranch-functions-2"> </a></h1>
+<h2 id="Initialize-models,-optimizers-and-image-transforms">Initialize models, optimizers and image transforms<a class="anchor-link" href="#Initialize-models,-optimizers-and-image-transforms"> </a></h2>
 </div>
 </div>
 </div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+<span class="c1"># Set trunk model and replace the softmax layer with an identity function</span>
+<span class="n">trunk</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">resnet18</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">trunk_output_size</span> <span class="o">=</span> <span class="n">trunk</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">in_features</span>
+<span class="n">trunk</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">common_functions</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
+<span class="n">trunk</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">DataParallel</span><span class="p">(</span><span class="n">trunk</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">))</span>
+
+<span class="c1"># Set embedder model. This takes in the output of the trunk and outputs 64 dimensional embeddings</span>
+<span class="n">embedder</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">DataParallel</span><span class="p">(</span><span class="n">MLP</span><span class="p">([</span><span class="n">trunk_output_size</span><span class="p">,</span> <span class="mi">64</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">))</span>
+
+<span class="c1"># Set optimizers (trying out different learnng rates)</span>
+<span class="c1">#trunk_optimizer = torch.optim.Adam(trunk.parameters(), lr=0.00001, weight_decay=0.0001)</span>
+<span class="c1">#embedder_optimizer = torch.optim.Adam(embedder.parameters(), lr=0.0001, weight_decay=0.0001)</span>
+<span class="n">trunk_optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">trunk</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">)</span>
+<span class="n">embedder_optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">embedder</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Create-the-loss,-miner,-sampler,-and-package-them-into-dictionaries">Create the loss, miner, sampler, and package them into dictionaries<a class="anchor-link" href="#Create-the-loss,-miner,-sampler,-and-package-them-into-dictionaries"> </a></h1>
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">loss</span> <span class="o">=</span> <span class="n">losses</span><span class="o">.</span><span class="n">TripletMarginLoss</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+
+<span class="c1"># Set the mining function</span>
+<span class="n">miner</span> <span class="o">=</span> <span class="n">miners</span><span class="o">.</span><span class="n">TripletMarginMiner</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">type_of_triplets</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
+<span class="c1">#miner = miners.MultiSimilarityMiner(epsilon=0.1)</span>
+
+<span class="c1"># Set the dataloader sampler</span>
+<span class="c1"># 4 samples each will be returned -&gt; for us m=2 max</span>
+<span class="n">sampler</span> <span class="o">=</span> <span class="n">samplers</span><span class="o">.</span><span class="n">MPerClassSampler</span><span class="p">(</span><span class="n">train_dataset</span><span class="o">.</span><span class="n">targets</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">length_before_new_iter</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">train_dataset</span><span class="p">))</span>
+<span class="c1">#sampler  = samplers.FixedSetOfTriplets(train_dataset.targets, len(train_dataset))</span>
+
+<span class="c1"># Set other training parameters</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="n">num_epochs</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="c1"># Package the above stuff into dictionaries.</span>
+<span class="n">models</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;trunk&quot;</span><span class="p">:</span> <span class="n">trunk</span><span class="p">,</span> <span class="s2">&quot;embedder&quot;</span><span class="p">:</span> <span class="n">embedder</span><span class="p">}</span>
+<span class="n">optimizers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;trunk_optimizer&quot;</span><span class="p">:</span> <span class="n">trunk_optimizer</span><span class="p">,</span> <span class="s2">&quot;embedder_optimizer&quot;</span><span class="p">:</span> <span class="n">embedder_optimizer</span><span class="p">}</span>
+<span class="n">loss_funcs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;metric_loss&quot;</span><span class="p">:</span> <span class="n">loss</span><span class="p">}</span>
+<span class="n">mining_funcs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;tuple_miner&quot;</span><span class="p">:</span> <span class="n">miner</span><span class="p">}</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span>rm -rf example_logs/ example_saved_models/ example_tensorboard/
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Create-the-training-and-testing-hooks">Create the training and testing hooks<a class="anchor-link" href="#Create-the-training-and-testing-hooks"> </a></h2>
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span> pip install record-keeper tensorboard
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Requirement already satisfied: record-keeper in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (0.9.26)
+Requirement already satisfied: tensorboard in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (2.3.0)
+Requirement already satisfied: matplotlib in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from record-keeper) (3.3.1)
+Requirement already satisfied: numpy in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from record-keeper) (1.19.1)
+Requirement already satisfied: tensorboard-plugin-wit&gt;=1.6.0 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from tensorboard) (1.7.0)
+Requirement already satisfied: werkzeug&gt;=0.11.15 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from tensorboard) (1.0.1)
+Requirement already satisfied: markdown&gt;=2.6.8 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from tensorboard) (3.2.2)
+Requirement already satisfied: requests&lt;3,&gt;=2.21.0 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from tensorboard) (2.24.0)
+Requirement already satisfied: setuptools&gt;=41.0.0 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from tensorboard) (47.1.0)
+Requirement already satisfied: wheel&gt;=0.26; python_version &gt;= &#34;3&#34; in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from tensorboard) (0.35.1)
+Requirement already satisfied: google-auth&lt;2,&gt;=1.6.3 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from tensorboard) (1.20.1)
+Requirement already satisfied: protobuf&gt;=3.6.0 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from tensorboard) (3.13.0)
+Requirement already satisfied: grpcio&gt;=1.24.3 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from tensorboard) (1.31.0)
+Requirement already satisfied: six&gt;=1.10.0 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from tensorboard) (1.15.0)
+Requirement already satisfied: google-auth-oauthlib&lt;0.5,&gt;=0.4.1 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from tensorboard) (0.4.1)
+Requirement already satisfied: absl-py&gt;=0.4 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from tensorboard) (0.10.0)
+Requirement already satisfied: certifi&gt;=2020.06.20 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from matplotlib-&gt;record-keeper) (2020.6.20)
+Requirement already satisfied: cycler&gt;=0.10 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from matplotlib-&gt;record-keeper) (0.10.0)
+Requirement already satisfied: python-dateutil&gt;=2.1 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from matplotlib-&gt;record-keeper) (2.8.1)
+Requirement already satisfied: pillow&gt;=6.2.0 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from matplotlib-&gt;record-keeper) (7.2.0)
+Requirement already satisfied: pyparsing!=2.0.4,!=2.1.2,!=2.1.6,&gt;=2.0.3 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from matplotlib-&gt;record-keeper) (2.4.7)
+Requirement already satisfied: kiwisolver&gt;=1.0.1 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from matplotlib-&gt;record-keeper) (1.2.0)
+Requirement already satisfied: chardet&lt;4,&gt;=3.0.2 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from requests&lt;3,&gt;=2.21.0-&gt;tensorboard) (3.0.4)
+Requirement already satisfied: urllib3!=1.25.0,!=1.25.1,&lt;1.26,&gt;=1.21.1 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from requests&lt;3,&gt;=2.21.0-&gt;tensorboard) (1.25.10)
+Requirement already satisfied: idna&lt;3,&gt;=2.5 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from requests&lt;3,&gt;=2.21.0-&gt;tensorboard) (2.10)
+Requirement already satisfied: cachetools&lt;5.0,&gt;=2.0.0 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from google-auth&lt;2,&gt;=1.6.3-&gt;tensorboard) (4.1.1)
+Requirement already satisfied: rsa&lt;5,&gt;=3.1.4; python_version &gt;= &#34;3.5&#34; in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from google-auth&lt;2,&gt;=1.6.3-&gt;tensorboard) (4.6)
+Requirement already satisfied: pyasn1-modules&gt;=0.2.1 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from google-auth&lt;2,&gt;=1.6.3-&gt;tensorboard) (0.2.8)
+Requirement already satisfied: requests-oauthlib&gt;=0.7.0 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from google-auth-oauthlib&lt;0.5,&gt;=0.4.1-&gt;tensorboard) (1.3.0)
+Requirement already satisfied: pyasn1&gt;=0.1.3 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from rsa&lt;5,&gt;=3.1.4; python_version &gt;= &#34;3.5&#34;-&gt;google-auth&lt;2,&gt;=1.6.3-&gt;tensorboard) (0.4.8)
+Requirement already satisfied: oauthlib&gt;=3.0.0 in /Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/site-packages (from requests-oauthlib&gt;=0.7.0-&gt;google-auth-oauthlib&lt;0.5,&gt;=0.4.1-&gt;tensorboard) (3.1.0)
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">record_keeper</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">logging_presets</span><span class="o">.</span><span class="n">get_record_keeper</span><span class="p">(</span><span class="s2">&quot;example_logs&quot;</span><span class="p">,</span> <span class="s2">&quot;example_tensorboard&quot;</span><span class="p">)</span>
+<span class="n">hooks</span> <span class="o">=</span> <span class="n">logging_presets</span><span class="o">.</span><span class="n">get_hook_container</span><span class="p">(</span><span class="n">record_keeper</span><span class="p">)</span>
+<span class="n">dataset_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="n">val_dataset</span><span class="p">}</span>
+<span class="n">model_folder</span> <span class="o">=</span> <span class="s2">&quot;example_saved_models&quot;</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>WARNING:root:No module named &#39;tensorboard&#39;
+WARNING:root:There won&#39;t be any logging or model saving.
+WARNING:root:To fix this, pip install record-keeper tensorboard
+WARNING:root:No record_keeper, so no preset hooks are being returned.
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span>pip install -q pytorch-metric-learning
+<span class="o">!</span>pip install -q faiss-gpu
+<span class="o">!</span>pip install -q umap-learn
+<span class="o">!</span>pip install -q pynndescent
+<span class="o">!</span>pip install -q record-keeper
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre><span class="ansi-red-fg">  ERROR: Command errored out with exit status 1:
+   command: /Library/Frameworks/Python.framework/Versions/3.8/bin/python3.8 -u -c &#39;import sys, setuptools, tokenize; sys.argv[0] = &#39;&#34;&#39;&#34;&#39;/private/var/folders/64/cfbgb51x76n53yph6vg0ljhw0000gn/T/pip-install-xgzdbww0/faiss-gpu/setup.py&#39;&#34;&#39;&#34;&#39;; __file__=&#39;&#34;&#39;&#34;&#39;/private/var/folders/64/cfbgb51x76n53yph6vg0ljhw0000gn/T/pip-install-xgzdbww0/faiss-gpu/setup.py&#39;&#34;&#39;&#34;&#39;;f=getattr(tokenize, &#39;&#34;&#39;&#34;&#39;open&#39;&#34;&#39;&#34;&#39;, open)(__file__);code=f.read().replace(&#39;&#34;&#39;&#34;&#39;\r\n&#39;&#34;&#39;&#34;&#39;, &#39;&#34;&#39;&#34;&#39;\n&#39;&#34;&#39;&#34;&#39;);f.close();exec(compile(code, __file__, &#39;&#34;&#39;&#34;&#39;exec&#39;&#34;&#39;&#34;&#39;))&#39; bdist_wheel -d /private/var/folders/64/cfbgb51x76n53yph6vg0ljhw0000gn/T/pip-wheel-qm35cgmg
+       cwd: /private/var/folders/64/cfbgb51x76n53yph6vg0ljhw0000gn/T/pip-install-xgzdbww0/faiss-gpu/
+  Complete output (8 lines):
+  running bdist_wheel
+  running build
+  running build_ext
+  building &#39;faiss._swigfaiss&#39; extension
+  swigging python/swigfaiss.i to python/swigfaiss_wrap.cpp
+  swig -python -c++ -Doverride= -I/usr/local/include/faiss -I/usr/local/cuda/include -DGPU_WRAPPER -o python/swigfaiss_wrap.cpp python/swigfaiss.i
+  unable to execute &#39;swig&#39;: No such file or directory
+  error: command &#39;swig&#39; failed with exit status 1
+  ----------------------------------------</span>
+<span class="ansi-red-fg">  ERROR: Failed building wheel for faiss-gpu</span>
+<span class="ansi-yellow-fg">DEPRECATION: Could not build wheels for faiss-gpu which do not use PEP 517. pip will fall back to legacy &#39;setup.py install&#39; for these. pip 21.0 will remove support for this functionality. A possible replacement is to fix the wheel build issue reported above. You can find discussion regarding this at https://github.com/pypa/pip/issues/8368.</span>
+<span class="ansi-red-fg">    ERROR: Command errored out with exit status 1:
+     command: /Library/Frameworks/Python.framework/Versions/3.8/bin/python3.8 -u -c &#39;import sys, setuptools, tokenize; sys.argv[0] = &#39;&#34;&#39;&#34;&#39;/private/var/folders/64/cfbgb51x76n53yph6vg0ljhw0000gn/T/pip-install-xgzdbww0/faiss-gpu/setup.py&#39;&#34;&#39;&#34;&#39;; __file__=&#39;&#34;&#39;&#34;&#39;/private/var/folders/64/cfbgb51x76n53yph6vg0ljhw0000gn/T/pip-install-xgzdbww0/faiss-gpu/setup.py&#39;&#34;&#39;&#34;&#39;;f=getattr(tokenize, &#39;&#34;&#39;&#34;&#39;open&#39;&#34;&#39;&#34;&#39;, open)(__file__);code=f.read().replace(&#39;&#34;&#39;&#34;&#39;\r\n&#39;&#34;&#39;&#34;&#39;, &#39;&#34;&#39;&#34;&#39;\n&#39;&#34;&#39;&#34;&#39;);f.close();exec(compile(code, __file__, &#39;&#34;&#39;&#34;&#39;exec&#39;&#34;&#39;&#34;&#39;))&#39; install --record /private/var/folders/64/cfbgb51x76n53yph6vg0ljhw0000gn/T/pip-record-yh2v2z2q/install-record.txt --single-version-externally-managed --compile --install-headers /Library/Frameworks/Python.framework/Versions/3.8/include/python3.8/faiss-gpu
+         cwd: /private/var/folders/64/cfbgb51x76n53yph6vg0ljhw0000gn/T/pip-install-xgzdbww0/faiss-gpu/
+    Complete output (8 lines):
+    running install
+    running build
+    running build_ext
+    building &#39;faiss._swigfaiss&#39; extension
+    swigging python/swigfaiss.i to python/swigfaiss_wrap.cpp
+    swig -python -c++ -Doverride= -I/usr/local/include/faiss -I/usr/local/cuda/include -DGPU_WRAPPER -o python/swigfaiss_wrap.cpp python/swigfaiss.i
+    unable to execute &#39;swig&#39;: No such file or directory
+    error: command &#39;swig&#39; failed with exit status 1
+    ----------------------------------------</span>
+<span class="ansi-red-fg">ERROR: Command errored out with exit status 1: /Library/Frameworks/Python.framework/Versions/3.8/bin/python3.8 -u -c &#39;import sys, setuptools, tokenize; sys.argv[0] = &#39;&#34;&#39;&#34;&#39;/private/var/folders/64/cfbgb51x76n53yph6vg0ljhw0000gn/T/pip-install-xgzdbww0/faiss-gpu/setup.py&#39;&#34;&#39;&#34;&#39;; __file__=&#39;&#34;&#39;&#34;&#39;/private/var/folders/64/cfbgb51x76n53yph6vg0ljhw0000gn/T/pip-install-xgzdbww0/faiss-gpu/setup.py&#39;&#34;&#39;&#34;&#39;;f=getattr(tokenize, &#39;&#34;&#39;&#34;&#39;open&#39;&#34;&#39;&#34;&#39;, open)(__file__);code=f.read().replace(&#39;&#34;&#39;&#34;&#39;\r\n&#39;&#34;&#39;&#34;&#39;, &#39;&#34;&#39;&#34;&#39;\n&#39;&#34;&#39;&#34;&#39;);f.close();exec(compile(code, __file__, &#39;&#34;&#39;&#34;&#39;exec&#39;&#34;&#39;&#34;&#39;))&#39; install --record /private/var/folders/64/cfbgb51x76n53yph6vg0ljhw0000gn/T/pip-record-yh2v2z2q/install-record.txt --single-version-externally-managed --compile --install-headers /Library/Frameworks/Python.framework/Versions/3.8/include/python3.8/faiss-gpu Check the logs for full command output.</span>
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">tester</span> <span class="o">=</span> <span class="n">testers</span><span class="o">.</span><span class="n">GlobalEmbeddingSpaceTester</span><span class="p">(</span><span class="n">end_of_testing_hook</span> <span class="o">=</span> <span class="n">hooks</span><span class="o">.</span><span class="n">end_of_testing_hook</span><span class="p">,</span> 
+                                            <span class="n">dataloader_num_workers</span> <span class="o">=</span> <span class="mi">32</span><span class="p">)</span>
+
+<span class="n">end_of_epoch_hook</span> <span class="o">=</span> <span class="n">hooks</span><span class="o">.</span><span class="n">end_of_epoch_hook</span><span class="p">(</span><span class="n">tester</span><span class="p">,</span> 
+                                            <span class="n">dataset_dict</span><span class="p">,</span> 
+                                            <span class="n">model_folder</span><span class="p">,</span> 
+                                            <span class="c1">#test_interval = 1,</span>
+                                            <span class="c1">#patience = 1)</span>
+                                           <span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">trainer</span> <span class="o">=</span> <span class="n">trainers</span><span class="o">.</span><span class="n">MetricLossOnly</span><span class="p">(</span><span class="n">models</span><span class="p">,</span>
+                                <span class="n">optimizers</span><span class="p">,</span>
+                                <span class="n">batch_size</span><span class="p">,</span>
+                                <span class="n">loss_funcs</span><span class="p">,</span>
+                                <span class="n">mining_funcs</span><span class="p">,</span>
+                                <span class="n">train_dataset</span><span class="p">,</span>
+                                <span class="n">sampler</span><span class="o">=</span><span class="n">sampler</span><span class="p">,</span>
+                                <span class="n">dataloader_num_workers</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+                                <span class="n">end_of_iteration_hook</span> <span class="o">=</span> <span class="n">hooks</span><span class="o">.</span><span class="n">end_of_iteration_hook</span><span class="p">,</span>
+                                <span class="n">end_of_epoch_hook</span> <span class="o">=</span> <span class="n">end_of_epoch_hook</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">trainer</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">num_epochs</span><span class="o">=</span><span class="n">num_epochs</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>INFO:root:Initializing dataloader
+INFO:root:Initializing dataloader iterator
+INFO:root:Done creating dataloader iterator
+INFO:root:TRAINING EPOCH 1
+  0%|          | 0/36 [00:00&lt;?, ?it/s]/Users/Simona/opt/miniconda3/lib/python3.8/site-packages/pytorch_metric_learning/utils/loss_and_miner_utils.py:120: UserWarning: This overload of nonzero is deprecated:
+	nonzero()
+Consider using one of the following signatures instead:
+	nonzero(*, bool as_tuple) (Triggered internally at  ../torch/csrc/utils/python_arg_parser.cpp:766.)
+  a_idx = triplets.nonzero()[:, 0].flatten()
+total_loss=0.07465: 100%|██████████| 36/36 [14:23&lt;00:00, 23.98s/it]
+INFO:root:TRAINING EPOCH 2
+total_loss=0.09641: 100%|██████████| 36/36 [17:13&lt;00:00, 28.71s/it]  
+INFO:root:TRAINING EPOCH 3
+total_loss=0.08873: 100%|██████████| 36/36 [14:49&lt;00:00, 24.71s/it]  
+INFO:root:TRAINING EPOCH 4
+total_loss=0.08846: 100%|██████████| 36/36 [14:42&lt;00:00, 24.51s/it]  
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Saving-results">Saving results<a class="anchor-link" href="#Saving-results"> </a></h1>
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">PATH1</span> <span class="o">=</span> <span class="s1">&#39;./SentinelNaip_TripletMarginMiner_trunk.pth&#39;</span>
+<span class="n">PATH2</span> <span class="o">=</span> <span class="s1">&#39;./SentinelNaip_TripletMarginMiner_embed.pth&#39;</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">trunk</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">PATH1</span><span class="p">)</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">embedder</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">PATH2</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">loss_histories</span> <span class="o">=</span> <span class="n">hooks</span><span class="o">.</span><span class="n">get_loss_history</span><span class="p">()</span> 
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_text output_error">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">AttributeError</span>                            Traceback (most recent call last)
+<span class="ansi-green-fg">&lt;ipython-input-27-a40b1c34b18e&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
+<span class="ansi-green-intense-fg ansi-bold">      1</span> <span class="ansi-red-fg"># Get a dictionary mapping from loss names to lists</span>
+<span class="ansi-green-fg">----&gt; 2</span><span class="ansi-red-fg"> </span>loss_histories <span class="ansi-blue-fg">=</span> hooks<span class="ansi-blue-fg">.</span>get_loss_history<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
+
+<span class="ansi-red-fg">AttributeError</span>: &#39;EmptyContainer&#39; object has no attribute &#39;get_loss_history&#39;</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">test_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="n">test_dataset</span><span class="p">}</span>
+<span class="n">tester</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="n">epoch</span><span class="o">=</span><span class="n">num_epochs</span><span class="p">,</span><span class="n">dataset_dict</span><span class="o">=</span><span class="n">test_dict</span><span class="p">,</span> <span class="n">trunk_model</span> <span class="o">=</span> <span class="n">trunk</span><span class="p">,</span> <span class="n">embedder_model</span><span class="o">=</span><span class="n">embedder</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>INFO:root:Evaluating epoch 4
+INFO:root:Getting embeddings for the test split
+100%|██████████| 6/6 [01:13&lt;00:00, 12.27s/it]
+INFO:root:Computing accuracy for the test split
+INFO:root:running k-nn with k=2
+INFO:root:embedding dimensionality is 64
+INFO:root:running k-means clustering with k=83
+INFO:root:embedding dimensionality is 64
+INFO:root:defaultdict(&lt;class &#39;dict&#39;&gt;, {&#39;test&#39;: {&#39;epoch&#39;: 4, &#39;AMI_level0&#39;: 0.23172787362871838, &#39;NMI_level0&#39;: 0.8651431734890223, &#39;mean_average_precision_at_r_level0&#39;: 0.26506024096385544, &#39;precision_at_1_level0&#39;: 0.26506024096385544, &#39;r_precision_level0&#39;: 0.26506024096385544}})
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">train_emb</span><span class="p">,</span> <span class="n">train_lab</span> <span class="o">=</span> <span class="n">tester</span><span class="o">.</span><span class="n">get_all_embeddings</span><span class="p">(</span><span class="n">train_dataset</span><span class="p">,</span><span class="n">trunk_model</span> <span class="o">=</span> <span class="n">trunk</span><span class="p">,</span> <span class="n">embedder_model</span><span class="o">=</span><span class="n">embedder</span><span class="p">)</span>
+<span class="n">val_emb</span><span class="p">,</span> <span class="n">val_lab</span> <span class="o">=</span> <span class="n">tester</span><span class="o">.</span><span class="n">get_all_embeddings</span><span class="p">(</span><span class="n">val_dataset</span><span class="p">,</span> <span class="n">trunk_model</span> <span class="o">=</span> <span class="n">trunk</span><span class="p">,</span> <span class="n">embedder_model</span><span class="o">=</span><span class="n">embedder</span><span class="p">)</span>
+<span class="n">test_emb</span><span class="p">,</span> <span class="n">test_lab</span> <span class="o">=</span> <span class="n">tester</span><span class="o">.</span><span class="n">get_all_embeddings</span><span class="p">(</span><span class="n">test_dataset</span><span class="p">,</span> <span class="n">trunk_model</span> <span class="o">=</span> <span class="n">trunk</span><span class="p">,</span> <span class="n">embedder_model</span><span class="o">=</span><span class="n">embedder</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>100%|██████████| 73/73 [07:40&lt;00:00,  6.31s/it] 
+100%|██████████| 6/6 [01:04&lt;00:00, 10.80s/it]
+100%|██████████| 6/6 [01:12&lt;00:00, 12.14s/it]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="s1">&#39;/Users/Simona/Documents/Studium/MasterThesisFolder/AdditionalCode/Fresno_Area/train&#39;</span>
+<span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="s1">&#39;/Users/Simona/Documents/Studium/MasterThesisFolder/AdditionalCode/Fresno_Area/train_emb_triplet&#39;</span><span class="p">,</span><span class="n">train_emb</span><span class="p">)</span>
+<span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="s1">&#39;/Users/Simona/Documents/Studium/MasterThesisFolder/AdditionalCode/Fresno_Area/train_lab_triplet&#39;</span><span class="p">,</span><span class="n">train_lab</span><span class="p">)</span>
+<span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="s1">&#39;/Users/Simona/Documents/Studium/MasterThesisFolder/AdditionalCode/Fresno_Area/val_emb_triplet&#39;</span><span class="p">,</span><span class="n">val_emb</span><span class="p">)</span>
+<span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="s1">&#39;/Users/Simona/Documents/Studium/MasterThesisFolder/AdditionalCode/Fresno_Area/val_lab_triplet&#39;</span><span class="p">,</span><span class="n">val_lab</span><span class="p">)</span>
+<span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="s1">&#39;/Users/Simona/Documents/Studium/MasterThesisFolder/AdditionalCode/Fresno_Area/test_emb_triplet&#39;</span><span class="p">,</span><span class="n">test_emb</span><span class="p">)</span>
+<span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="s1">&#39;/Users/Simona/Documents/Studium/MasterThesisFolder/AdditionalCode/Fresno_Area/test_lab_triplet&#39;</span><span class="p">,</span><span class="n">test_lab</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Distance-Plots">Distance Plots<a class="anchor-link" href="#Distance-Plots"> </a></h1>
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">numpy.linalg</span> <span class="kn">import</span> <span class="n">norm</span>
+<span class="n">distance_to_</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">test_emb</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+  <span class="n">sublist</span> <span class="o">=</span> <span class="p">[]</span>
+  <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">test_emb</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">test_lab</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span><span class="nb">int</span><span class="p">(</span><span class="n">test_lab</span><span class="p">[</span><span class="n">j</span><span class="p">])])</span>
+    <span class="n">sublist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">([</span><span class="n">norm</span><span class="p">(</span><span class="n">test_emb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">test_emb</span><span class="p">[</span><span class="n">j</span><span class="p">]),</span><span class="n">labels</span><span class="p">]))</span>
+    <span class="c1">#sublist.sort()</span>
+  <span class="n">distance_to_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sublist</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_text output_error">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
+<span class="ansi-green-fg">&lt;ipython-input-4-7433cd1b0a37&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
+<span class="ansi-green-intense-fg ansi-bold">      1</span> <span class="ansi-green-fg">from</span> numpy<span class="ansi-blue-fg">.</span>linalg <span class="ansi-green-fg">import</span> norm
+<span class="ansi-green-intense-fg ansi-bold">      2</span> distance_to_ <span class="ansi-blue-fg">=</span> <span class="ansi-blue-fg">[</span><span class="ansi-blue-fg">]</span>
+<span class="ansi-green-fg">----&gt; 3</span><span class="ansi-red-fg"> </span><span class="ansi-green-fg">for</span> i <span class="ansi-green-fg">in</span> range<span class="ansi-blue-fg">(</span><span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">,</span>test_emb<span class="ansi-blue-fg">.</span>shape<span class="ansi-blue-fg">[</span><span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">]</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
+<span class="ansi-green-intense-fg ansi-bold">      4</span>   sublist <span class="ansi-blue-fg">=</span> <span class="ansi-blue-fg">[</span><span class="ansi-blue-fg">]</span>
+<span class="ansi-green-intense-fg ansi-bold">      5</span>   <span class="ansi-green-fg">for</span> j <span class="ansi-green-fg">in</span> range<span class="ansi-blue-fg">(</span><span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">,</span>test_emb<span class="ansi-blue-fg">.</span>shape<span class="ansi-blue-fg">[</span><span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">]</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
+
+<span class="ansi-red-fg">NameError</span>: name &#39;test_emb&#39; is not defined</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="List-of-distances-between-Sentinel-(anchor)-and-Naip-(pos,neg)">List of distances between Sentinel (anchor) and Naip (pos,neg)<a class="anchor-link" href="#List-of-distances-between-Sentinel-(anchor)-and-Naip-(pos,neg)"> </a></h1>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Plotting-anchor,-positive-and-negative-distances">Plotting anchor, positive and negative distances<a class="anchor-link" href="#Plotting-anchor,-positive-and-negative-distances"> </a></h3>
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">x_neg</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">x_pos</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">x_arr_neg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">test_dataset</span><span class="p">))</span>
+<span class="n">x_arr_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">test_dataset</span><span class="p">))</span>
+<span class="n">x_arr_neg_list</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">x_arr_pos_list</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">x_arr_labels_list</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">x_arr_labels_list_n</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">distance_to_</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)):</span>
+  <span class="n">x_n_</span> <span class="o">=</span> <span class="p">[]</span>
+  <span class="n">x_p_</span> <span class="o">=</span> <span class="p">[]</span>
+  <span class="n">x_p_labels</span> <span class="o">=</span> <span class="p">[]</span>
+  <span class="n">x_n_labels</span> <span class="o">=</span> <span class="p">[]</span>
+  <span class="n">x_n_labels_raw</span> <span class="o">=</span> <span class="p">[]</span>
+  <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">distance_to_</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)):</span>
+    <span class="k">if</span> <span class="n">distance_to_</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="o">*</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">i</span><span class="p">:</span>
+      <span class="n">x_p_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">distance_to_</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="o">*</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> 
+      <span class="n">x_p_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="n">x_n_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">distance_to_</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="o">*</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+      <span class="n">x_n_labels</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i</span><span class="o">*</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">j</span><span class="o">*</span><span class="mi">2</span><span class="p">))</span>
+      <span class="n">x_n_labels_raw</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">))</span>
+  <span class="n">x_arr_neg_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x_n_</span><span class="p">)</span>
+  <span class="n">x_arr_pos_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x_p_</span><span class="p">)</span>
+  <span class="n">x_arr_neg_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_arr_neg_</span><span class="p">)</span>
+  <span class="c1">#x_arr_pos = x_arr_pos + x_arr_pos_</span>
+  <span class="n">x_arr_pos_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_arr_pos_</span><span class="p">)</span>
+  <span class="n">x_arr_labels_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_p_labels</span><span class="p">)</span>
+  <span class="n">x_arr_labels_list_n</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_n_labels_raw</span><span class="p">)</span>
+  <span class="n">x_mean_neg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x_arr_neg</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+  <span class="n">x_mean_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x_arr_pos</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+  <span class="n">x_std_neg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">x_arr_neg</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+  <span class="n">x_std_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">x_arr_pos</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">seaborn</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Collecting seaborn
+  Using cached seaborn-0.10.1-py3-none-any.whl (215 kB)
+Requirement already satisfied: numpy&gt;=1.13.3 in /Users/Simona/opt/miniconda3/lib/python3.8/site-packages (from seaborn) (1.19.1)
+Collecting pandas&gt;=0.22.0
+  Using cached pandas-1.1.1-cp38-cp38-macosx_10_9_x86_64.whl (10.6 MB)
+Requirement already satisfied: scipy&gt;=1.0.1 in /Users/Simona/opt/miniconda3/lib/python3.8/site-packages (from seaborn) (1.5.2)
+Requirement already satisfied: matplotlib&gt;=2.1.2 in /Users/Simona/opt/miniconda3/lib/python3.8/site-packages (from seaborn) (3.3.1)
+Requirement already satisfied: python-dateutil&gt;=2.7.3 in /Users/Simona/opt/miniconda3/lib/python3.8/site-packages (from pandas&gt;=0.22.0-&gt;seaborn) (2.8.1)
+Collecting pytz&gt;=2017.2
+  Using cached pytz-2020.1-py2.py3-none-any.whl (510 kB)
+Requirement already satisfied: pillow&gt;=6.2.0 in /Users/Simona/opt/miniconda3/lib/python3.8/site-packages (from matplotlib&gt;=2.1.2-&gt;seaborn) (7.2.0)
+Requirement already satisfied: cycler&gt;=0.10 in /Users/Simona/opt/miniconda3/lib/python3.8/site-packages (from matplotlib&gt;=2.1.2-&gt;seaborn) (0.10.0)
+Requirement already satisfied: certifi&gt;=2020.06.20 in /Users/Simona/opt/miniconda3/lib/python3.8/site-packages (from matplotlib&gt;=2.1.2-&gt;seaborn) (2020.6.20)
+Requirement already satisfied: kiwisolver&gt;=1.0.1 in /Users/Simona/opt/miniconda3/lib/python3.8/site-packages (from matplotlib&gt;=2.1.2-&gt;seaborn) (1.2.0)
+Requirement already satisfied: pyparsing!=2.0.4,!=2.1.2,!=2.1.6,&gt;=2.0.3 in /Users/Simona/opt/miniconda3/lib/python3.8/site-packages (from matplotlib&gt;=2.1.2-&gt;seaborn) (2.4.7)
+Requirement already satisfied: six&gt;=1.5 in /Users/Simona/opt/miniconda3/lib/python3.8/site-packages (from python-dateutil&gt;=2.7.3-&gt;pandas&gt;=0.22.0-&gt;seaborn) (1.15.0)
+Installing collected packages: pytz, pandas, seaborn
+Successfully installed pandas-1.1.1 pytz-2020.1 seaborn-0.10.1
+Note: you may need to restart the kernel to use updated packages.
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span><span class="o">,</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">x_arr_neg_list</span>
+<span class="n">x_2</span> <span class="o">=</span>  <span class="n">x_arr_pos_list</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">distplot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;different location&quot;</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">distplot</span><span class="p">(</span><span class="n">x_2</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;same location&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Distance&#39;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;Distribution&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Distance between locations&quot;</span><span class="p">)</span> 
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_text output_error">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
+<span class="ansi-green-fg">&lt;ipython-input-5-fd17c58abd4a&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
+<span class="ansi-green-intense-fg ansi-bold">      1</span> <span class="ansi-green-fg">import</span> seaborn <span class="ansi-green-fg">as</span> sns<span class="ansi-blue-fg">,</span> numpy <span class="ansi-green-fg">as</span> np
+<span class="ansi-green-intense-fg ansi-bold">      2</span> sns<span class="ansi-blue-fg">.</span>set<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
+<span class="ansi-green-fg">----&gt; 3</span><span class="ansi-red-fg"> </span>x <span class="ansi-blue-fg">=</span> x_arr_neg_list
+<span class="ansi-green-intense-fg ansi-bold">      4</span> x_2 <span class="ansi-blue-fg">=</span>  x_arr_pos_list
+<span class="ansi-green-intense-fg ansi-bold">      5</span> ax <span class="ansi-blue-fg">=</span> sns<span class="ansi-blue-fg">.</span>distplot<span class="ansi-blue-fg">(</span>x<span class="ansi-blue-fg">,</span>label<span class="ansi-blue-fg">=</span><span class="ansi-blue-fg">&#34;different location&#34;</span><span class="ansi-blue-fg">)</span>
+
+<span class="ansi-red-fg">NameError</span>: name &#39;x_arr_neg_list&#39; is not defined</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
 </div>
  
 
